@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { LineChartOutlined, SearchOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useAuth } from "../contexts/AuthContext";
