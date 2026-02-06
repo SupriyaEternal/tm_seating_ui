@@ -27,7 +27,7 @@ const DashboardLayout = () => {
     const location = useLocation();
     const { Logout } = useAuth();
 
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const sidebarOpen = true;
 
     const isActive = (path: string): boolean => location.pathname === path;
 
