@@ -12,6 +12,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
     "antd": "^6.2.2",
+    "dayjs": "^1.11.19",
     "axios": "^1.13.4",
     "jwt-decode": "^4.0.0",
     "nats.ws": "^1.30.3",

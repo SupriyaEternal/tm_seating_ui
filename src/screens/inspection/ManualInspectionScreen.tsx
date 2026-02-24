@@ -12,9 +12,26 @@ import image6 from "../../assets/images/image6.jpg";
 type Step = "health" | "orientation" | "multicamera";
 type CameraKey = "CAM-1" | "CAM-2" | "CAM-3" | "CAM-4" | "CAM-5";
 
+const DEFECT_TYPES: { key: string; label: string }[] = [
+    { key: "wrinkle", label: "Wrinkle" },
+    { key: "waviness", label: "Waviness" },
+    { key: "notch", label: "Notch" },
+    { key: "stitchJump", label: "Stitch Jump" },
+    { key: "stitchLoose", label: "Stitch Loose" },
+    { key: "looseThread", label: "Loose Thread" },
+    { key: "threadMissing", label: "Thread Missing" },
+    { key: "jRetainerIssue", label: "J Retainer Issue" },
+    { key: "pinchMark", label: "Pinch Mark" },
+    { key: "impressionMarks", label: "Impression Marks" },
+    { key: "stains", label: "Stains" },
+];
+
+type DefectCountsByCamera = Record<CameraKey, Record<string, number>>;
+
 const ManualInspectionScreen = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState<Step>("health");
+    const [selectedCamera, setSelectedCamera] = useState<CameraKey>("CAM-1");
     const [cameraConnected, setCameraConnected] = useState<Record<CameraKey, boolean>>({
         "CAM-1": true,
         "CAM-2": false,
@@ -88,13 +105,13 @@ const ManualInspectionScreen = () => {
         []
     );
 
-    const defectCounts = useMemo(
+    const defectsByCamera = useMemo<DefectCountsByCamera>(
         () => ({
-            "CAM-1": "W:3, S:2, N:1",
-            "CAM-2": "W:1, S:0, N:2",
-            "CAM-3": "W:0, S:1, N:0",
-            "CAM-4": "W:2, S:1, N:0",
-            "CAM-5": "W:4, S:2, N:1",
+            "CAM-1": { wrinkle: 2, waviness: 0, notch: 1, stitchJump: 0, stitchLoose: 1, looseThread: 0, threadMissing: 0, jRetainerIssue: 0, pinchMark: 0, impressionMarks: 1, stains: 0 },
+            "CAM-2": { wrinkle: 0, waviness: 1, notch: 0, stitchJump: 1, stitchLoose: 0, looseThread: 1, threadMissing: 0, jRetainerIssue: 0, pinchMark: 1, impressionMarks: 0, stains: 0 },
+            "CAM-3": { wrinkle: 0, waviness: 0, notch: 0, stitchJump: 0, stitchLoose: 0, looseThread: 0, threadMissing: 1, jRetainerIssue: 0, pinchMark: 0, impressionMarks: 0, stains: 0 },
+            "CAM-4": { wrinkle: 1, waviness: 0, notch: 0, stitchJump: 0, stitchLoose: 0, looseThread: 0, threadMissing: 0, jRetainerIssue: 1, pinchMark: 0, impressionMarks: 0, stains: 0 },
+            "CAM-5": { wrinkle: 0, waviness: 0, notch: 0, stitchJump: 0, stitchLoose: 0, looseThread: 0, threadMissing: 0, jRetainerIssue: 0, pinchMark: 0, impressionMarks: 0, stains: 2 },
         }),
         []
     );
@@ -519,34 +536,27 @@ const ManualInspectionScreen = () => {
             </div>
 
             <div className="mt-3 rounded-lg border border-gray-200 bg-white p-2">
-                <h4 className="text-xs font-semibold text-gray-700">Inspection Details</h4>
-                <div className="mt-2 space-y-2">
-                    {Object.keys(defectCounts).map((cam) => (
+                <h4 className="text-xs font-semibold text-gray-700">Defects by Camera</h4>
+                <Select
+                    value={selectedCamera}
+                    onChange={(v) => setSelectedCamera(v as CameraKey)}
+                    options={(["CAM-1", "CAM-2", "CAM-3", "CAM-4", "CAM-5"] as const).map((c) => ({
+                        label: c,
+                        value: c,
+                    }))}
+                    className="mt-2 w-full"
+                    size="small"
+                />
+                <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">
+                    {DEFECT_TYPES.map(({ key, label }) => (
                         <div
-                            key={`${cam}-detail`}
-                            className={`rounded-lg px-3 py-2 text-[11px] ${
-                                cameraResult[cam as CameraKey] === "ok"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-600"
-                            }`}
+                            key={key}
+                            className="flex items-center justify-between text-[11px] text-gray-700"
                         >
-                            <div className="flex items-center justify-between">
-                                <span className="font-semibold">{cam}</span>
-                                <span className="font-semibold">
-                                    {cameraResult[cam as CameraKey].toUpperCase()}
-                                </span>
-                            </div>
-                            {/* <div className="mt-1 text-[11px] font-semibold text-gray-700">
-                                {defectCounts[cam as CameraKey]}
-                            </div> */}
-                            <button
-                                onClick={() =>
-                                    navigate(`/inspection/auto/camera/${cam.toLowerCase()}`)
-                                }
-                                className="mt-1 text-[11px] font-semibold underline"
-                            >
-                                View Details ↗
-                            </button>
+                            <span>{label}</span>
+                            <span className="font-semibold text-gray-900">
+                                {defectsByCamera[selectedCamera]?.[key] ?? 0}
+                            </span>
                         </div>
                     ))}
                 </div>

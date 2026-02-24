@@ -1,4 +1,8 @@
-import { CheckCircleOutlined, CloseCircleOutlined, PieChartOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, CloseCircleOutlined, InfoCircleOutlined, PieChartOutlined } from "@ant-design/icons";
+import { DatePicker } from "antd";
+import type { Dayjs } from "dayjs";
+import { useState } from "react";
+import dayjs from "dayjs";
 
 const summaryCards = [
     {
@@ -45,7 +49,40 @@ const dailyInspections = {
     ng: 2,
 };
 
+// Mock confusion matrix: rows = Actual (Ground Truth), cols = Predicted
+// [Actual OK, Pred OK], [Actual OK, Pred NG], [Actual NG, Pred OK], [Actual NG, Pred NG]
+// → True Negative, False Positive, False Negative, True Positive (treating NG as positive)
+const defaultConfusionMatrix = {
+    tn: 6, // Actual OK, Predicted OK
+    fp: 2, // Actual OK, Predicted NG (false alarm)
+    fn: 1, // Actual NG, Predicted OK (missed defect)
+    tp: 1, // Actual NG, Predicted NG
+};
+
 const AnalyticsScreen = () => {
+    const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([
+        dayjs().subtract(7, "day"),
+        dayjs(),
+    ]);
+    const [confusionMatrix] = useState(defaultConfusionMatrix);
+
+    const accuracy =
+        confusionMatrix.tn + confusionMatrix.fp + confusionMatrix.fn + confusionMatrix.tp > 0
+            ? (
+                  (100 *
+                      (confusionMatrix.tp + confusionMatrix.tn)) /
+                  (confusionMatrix.tp + confusionMatrix.tn + confusionMatrix.fp + confusionMatrix.fn)
+              ).toFixed(1)
+            : "—";
+    const precision =
+        confusionMatrix.tp + confusionMatrix.fp > 0
+            ? (100 * (confusionMatrix.tp / (confusionMatrix.tp + confusionMatrix.fp))).toFixed(1)
+            : "—";
+    const recall =
+        confusionMatrix.tp + confusionMatrix.fn > 0
+            ? (100 * (confusionMatrix.tp / (confusionMatrix.tp + confusionMatrix.fn))).toFixed(1)
+            : "—";
+
     return (
         <div className="p-6">
             <div className="flex items-center justify-between">
@@ -57,11 +94,13 @@ const AnalyticsScreen = () => {
                         <button>Shift B</button>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600">
-                    <span>2026-02-06</span>
-                    <span className="text-gray-400">—</span>
-                    <span>2026-02-06</span>
-                </div>
+                <DatePicker.RangePicker
+                    value={dateRange}
+                    onChange={(dates) => setDateRange(dates ?? [null, null])}
+                    size="small"
+                    className="text-xs"
+                    format="YYYY-MM-DD"
+                />
             </div>
 
             <div className="mt-6 grid grid-cols-3 gap-5">
@@ -162,6 +201,73 @@ const AnalyticsScreen = () => {
                     </div>
                     <div className="mt-4 text-center text-[11px] text-gray-400">{dailyInspections.date}</div>
                     <div className="mt-4 h-2 rounded-full bg-blue-100" />
+                </div>
+            </div>
+
+            {/* Confusion Matrix — wireframe: date range filters the data used to compute the matrix */}
+            <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                        <span>Confusion Matrix</span>
+                        <span className="text-gray-400">(Date range applied above)</span>
+                    </div>
+                </div>
+
+                {/* <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50/80 p-3 text-[11px] text-amber-900">
+                    <div className="flex items-start gap-2">
+                        <InfoCircleOutlined className="mt-0.5 shrink-0 text-amber-600" />
+                        <div className="space-y-1">
+                            <p className="font-semibold">What is needed to calculate the confusion matrix</p>
+                            <ul className="list-inside list-disc space-y-0.5 text-amber-800">
+                                <li><strong>Ground truth</strong> — e.g. from the &quot;Ground Truth&quot; column in Inspection Details, or human OK/NG label per inspection.</li>
+                                <li><strong>Predicted result</strong> — system/ML output per inspection (OK or NG).</li>
+                                <li>One row per inspection with (actual_label, predicted_label), optionally <strong>filtered by date range</strong> (and shift, camera, defect type).</li>
+                            </ul>
+                            <p className="font-semibold pt-1">What you can do with it</p>
+                            <ul className="list-inside list-disc space-y-0.5 text-amber-800">
+                                <li><strong>Date range</strong> — Select start/end date to include only inspections in that period.</li>
+                                <li><strong>Metrics</strong> — Accuracy, Precision, Recall (and F1) from the matrix counts.</li>
+                                <li><strong>Model performance</strong> — Compare predicted vs actual to tune thresholds or retrain.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div> */}
+
+                <div className="mt-4 flex flex-wrap items-start gap-6">
+                    <div>
+                        <p className="mb-2 text-[11px] font-semibold text-gray-500">Actual (Ground Truth) → Predicted</p>
+                        <table className="border-collapse rounded-lg border border-gray-200 text-center text-xs">
+                            <thead>
+                                <tr className="bg-gray-100 text-gray-600">
+                                    <th className="w-16 border border-gray-200 p-2"></th>
+                                    <th className="w-20 border border-gray-200 p-2">Pred OK</th>
+                                    <th className="w-20 border border-gray-200 p-2">Pred NG</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td className="border border-gray-200 bg-gray-50 p-1.5 text-left text-[11px] font-medium text-gray-600">Actual OK</td>
+                                    <td className="border border-gray-200 p-3 font-semibold text-green-700">{confusionMatrix.tn}</td>
+                                    <td className="border border-gray-200 p-3 font-semibold text-orange-600">{confusionMatrix.fp}</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-gray-200 bg-gray-50 p-1.5 text-left text-[11px] font-medium text-gray-600">Actual NG</td>
+                                    <td className="border border-gray-200 p-3 font-semibold text-orange-600">{confusionMatrix.fn}</td>
+                                    <td className="border border-gray-200 p-3 font-semibold text-red-700">{confusionMatrix.tp}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p className="mt-1.5 text-[10px] text-gray-400">TN · FP · FN · TP</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-100 bg-gray-50 p-4 text-xs">
+                        <p className="mb-2 font-semibold text-gray-700">Derived metrics</p>
+                        <div className="space-y-1.5 text-gray-600">
+                            <p><span className="font-medium">Accuracy:</span> {accuracy}%</p>
+                            <p><span className="font-medium">Precision:</span> {precision}%</p>
+                            <p><span className="font-medium">Recall:</span> {recall}%</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

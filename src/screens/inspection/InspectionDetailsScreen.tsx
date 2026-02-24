@@ -1,5 +1,5 @@
-import { Image } from "antd";
-import { useMemo } from "react";
+import { Image, Input } from "antd";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar";
 import image1 from "../../assets/images/image1.jpg";
@@ -12,6 +12,7 @@ import image6 from "../../assets/images/image6.jpg";
 const InspectionDetailsScreen = () => {
     const navigate = useNavigate();
     const { inspectionId } = useParams();
+    const [groundTruth, setGroundTruth] = useState<Record<number, string>>({});
 
     const cameras = ["CAM-01", "CAM-02", "CAM-03", "CAM-04", "CAM-05"];
     const sampleImages = useMemo(
@@ -24,11 +25,15 @@ const InspectionDetailsScreen = () => {
     );
 
     const checkPoints = [
-        { id: 1, label: "Wrinkle", status: "No Wrinkle detected" },
-        { id: 2, label: "Waviness", status: "No Waviness detected" },
-        { id: 3, label: "Notch", status: "No Notch detected" },
-        { id: 4, label: "Stitch Jump", status: "No Stitch Jump detected" },
+        { id: 1, label: "Wrinkle", status: "No Wrinkle detected", count: 0 },
+        { id: 2, label: "Waviness", status: "Waviness detected", count: 1 },
+        { id: 3, label: "Notch", status: "No Notch detected", count: 0 },
+        { id: 4, label: "Stitch Jump", status: "Stitch Jump detected", count: 2 },
     ];
+
+    const handleGroundTruthChange = (checkPointId: number, value: string) => {
+        setGroundTruth((prev) => ({ ...prev, [checkPointId]: value }));
+    };
 
     const dimensionalData = [
         { id: 1, label: "Diameter parameter - OD ROD", status: "14 mm" },
@@ -135,7 +140,8 @@ const InspectionDetailsScreen = () => {
                                     <tr>
                                         <th className="p-2 text-left">S NO</th>
                                         <th className="p-2 text-left">CHECK POINT</th>
-                                        <th className="p-2 text-left">STATUS</th>
+                                        <th className="p-2 text-left">STATUS (Count)</th>
+                                        <th className="p-2 text-left">GROUND TRUTH</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -143,7 +149,21 @@ const InspectionDetailsScreen = () => {
                                         <tr key={`${cam}-check-${row.id}`} className="border-t">
                                             <td className="p-2">{row.id}</td>
                                             <td className="p-2">{row.label}</td>
-                                            <td className="p-2">{row.status}</td>
+                                            <td className="p-2">
+                                                <span>{row.status}</span>
+                                                <span className="ml-1 font-semibold text-gray-900">({row.count})</span>
+                                            </td>
+                                            <td className="p-2">
+                                                <Input
+                                                    size="small"
+                                                    placeholder="Enter ground truth"
+                                                    value={groundTruth[row.id] ?? ""}
+                                                    onChange={(e) =>
+                                                        handleGroundTruthChange(row.id, e.target.value)
+                                                    }
+                                                    className="max-w-[140px]"
+                                                />
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
