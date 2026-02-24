@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, CloseCircleOutlined, InfoCircleOutlined, PieChartOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, CloseCircleOutlined, PieChartOutlined } from "@ant-design/icons";
 import { DatePicker } from "antd";
 import type { Dayjs } from "dayjs";
 import { useState } from "react";
